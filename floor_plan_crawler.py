@@ -12,7 +12,7 @@ url_list = []
 for url in soup.find_all(name="loc"):
     if "floorplan" in url.text or "floorplans" in url.text:
         url_list.append(url.text)
-
+print('Received URLs')
 # filters out all response == 404 and blog posts
 not_404 = []
 for url in url_list:
@@ -21,7 +21,7 @@ for url in url_list:
             not_404.append(url)
     except requests.exceptions.TooManyRedirects:
         continue
-
+print('URLs filtered')
 # dictionary describing the city and home type because this isn't included anywhere
 community_city = {
     'Central Crossing': ('Aylett, VA', 'Single-family Home'),
@@ -51,7 +51,7 @@ community_city = {
     'The Reserve at Wackena': ('Cary, NC', 'Single-family Home')
 
 }
-
+print('Location dictionary read.')
 data_list = []
 # loop to check each page and get information from them
 for link in not_404:
@@ -182,7 +182,27 @@ for link in not_404:
     except IndexError as err:
         print(link, err)
         continue
+print('URLs processed.')
 
-pd.DataFrame(data_list).to_csv('floor-plans.csv', index=False)
-print(data_list)
+richmond_list = [item for item in data_list if 'richmond' in item['Final URL']]
+print('Richmond sorted.')
+pd.DataFrame(richmond_list).to_csv('richmond-floor-plans.csv', index=False)
+print('Richmond CSV done.')
+
+hampton_roads_list = [item for item in data_list if 'hampton-roads' in item['Final URL']]
+print('Hampton Roads sorted.')
+pd.DataFrame(hampton_roads_list).to_csv('hampton-roads-floor-plans.csv', index=False)
+print('Hampton Roads CSV done.')
+
+williamsburg_list = [item for item in data_list if 'williamsburg' in item['Final URL']]
+print('Williamsburg sorted.')
+pd.DataFrame(williamsburg_list).to_csv('williamsburg-floor-plans.csv', index=False)
+print('Williamsburg CSV done.')
+
+raleigh_list = [item for item in data_list if 'raleigh' in item['Final URL']]
+print('Raleigh sorted.')
+pd.DataFrame(raleigh_list).to_csv('raleigh-floor-plans.csv', index=False)
+print('Raleigh CSV done.')
+
+print('Script done.')
 
