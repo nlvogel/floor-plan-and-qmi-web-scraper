@@ -1,19 +1,20 @@
-from bs4 import BeautifulSoup
-import requests
-import pandas as pd
+from bs4 import BeautifulSoup  # BeautifulSoup is the webscraper
+import requests  # requests is how Python knows where to go when scraping the web; can also be used for APIs
+import pandas as pd  # pandas gathers the information into a DataFrame, ready to process into a CSV
 
 sitemaps = "https://hhhunthomes.com/sitemap.xml"
-response = requests.get(sitemaps)
-contents = response.text
-# initialize soup using an xml interpreter, doesn't work with html.parser
+response = requests.get(sitemaps)  # requests gets the HTML on the hhhunthomes.com sitemap
+contents = response.text  # then converts it to text, rather than raw html
+# initialize soup using an xml interpreter, doesn't work with html.parser for some reason
 soup = BeautifulSoup(contents, features="xml")
-url_list = []
-# get all urls
+url_list = []  # an empty list that will be used to store all the floor plan URLs for later processing
+# get all urls; find_all returns a list of all items that include, so we have to loop through them to get the text
+# version of the URL
 for url in soup.find_all(name="loc"):
     if "floorplan" in url.text or "floorplans" in url.text:
         url_list.append(url.text)
-print('Received URLs')
-# filters out all response == 404 and blog posts
+print('Received URLs')  # just vanity code to let you know everything above this worked
+# filters out all responses that equal 404 and blog posts
 not_404 = []
 for url in url_list:
     try:
@@ -21,8 +22,9 @@ for url in url_list:
             not_404.append(url)
     except requests.exceptions.TooManyRedirects:
         continue
-print('URLs filtered')
-# dictionary describing the city and home type because this isn't included anywhere
+print('URLs filtered')  # just vanity code to let you know everything above this worked
+# dictionary describing the city and home type because this isn't included anywhere; ideally this dictionary wouldn't
+# be necessary because it's available on the website
 community_city = {
     'Central Crossing': ('Aylett, VA', 'Single-family Home'),
     'FoxCreek Homestead': ('Moseley, VA', 'Single-family Home'),
@@ -51,8 +53,8 @@ community_city = {
     'The Reserve at Wackena': ('Cary, NC', 'Single-family Home')
 
 }
-print('Location dictionary read.')
-data_list = []
+print('Location dictionary read.')  # just vanity code to let you know everything above this worked
+data_list = []  # empty list for storage of all data to be written to CSV
 # loop to check each page and get information from them
 for link in not_404:
     try:
@@ -100,7 +102,7 @@ for link in not_404:
                 data_list.append(data)
             elif 'quarterpath' in link:
                 data = {
-                    'Listing Name': 'The ' + floor_plan_soup.h1.text.split("\n")[1],
+                    'Listing Name': floor_plan_soup.h1.text.split("\n")[1],
                     'Final URL': floor_plan_url,
                     'Image URL': floor_plan_soup.find('div', {'class': 'framed-image-content'}).find('img')['src'],
                     'City name': community_city['Quarterpath at Williamsburg Condos'][0],
@@ -184,24 +186,25 @@ for link in not_404:
         continue
 print('URLs processed.')
 
-richmond_list = [item for item in data_list if 'richmond' in item['Final URL']]
+# sorts all the data above into different lists based on location, then sends each list to a different CSV
+richmond_list = [item for item in data_list if 'richmond' in item['Final URL'] or 'new-kent' in item['Final URL']]
 print('Richmond sorted.')
-pd.DataFrame(richmond_list).to_csv('richmond-floor-plans.csv', index=False)
+pd.DataFrame(richmond_list).to_csv('floor-plans/richmond-floor-plans.csv', index=False)
 print('Richmond CSV done.')
 
 hampton_roads_list = [item for item in data_list if 'hampton-roads' in item['Final URL']]
 print('Hampton Roads sorted.')
-pd.DataFrame(hampton_roads_list).to_csv('hampton-roads-floor-plans.csv', index=False)
+pd.DataFrame(hampton_roads_list).to_csv('floor-plans/hampton-roads-floor-plans.csv', index=False)
 print('Hampton Roads CSV done.')
 
 williamsburg_list = [item for item in data_list if 'williamsburg' in item['Final URL']]
 print('Williamsburg sorted.')
-pd.DataFrame(williamsburg_list).to_csv('williamsburg-floor-plans.csv', index=False)
+pd.DataFrame(williamsburg_list).to_csv('floor-plans/williamsburg-floor-plans.csv', index=False)
 print('Williamsburg CSV done.')
 
 raleigh_list = [item for item in data_list if 'raleigh' in item['Final URL']]
 print('Raleigh sorted.')
-pd.DataFrame(raleigh_list).to_csv('raleigh-floor-plans.csv', index=False)
+pd.DataFrame(raleigh_list).to_csv('floor-plans/raleigh-floor-plans.csv', index=False)
 print('Raleigh CSV done.')
 
 print('Script done.')
